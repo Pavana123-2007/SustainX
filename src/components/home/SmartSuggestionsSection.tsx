@@ -1,0 +1,134 @@
+import { useState, useEffect } from "react";
+import { Brain, TrendingUp, Leaf, BarChart3 } from "lucide-react";
+import { motion } from "motion/react";
+import { useTranslations, Text, type FimoString } from "@fimo/ui";
+import { Button } from "@/components/ui/button";
+import ComingSoonDialog from "./ComingSoonDialog";
+import { getAIInsights } from "@/api/ai";
+
+export default function SmartSuggestionsSection() {
+  const { t } = useTranslations();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [aiInsights, setAiInsights] = useState<string[]>([
+    "Loading insights...",
+    "",
+    "",
+  ]);
+
+  useEffect(() => {
+    async function loadInsights() {
+      try {
+        const res = await getAIInsights({
+          score: 76,
+          co2: 2.4,
+          goodActions: 5,
+          badActions: 2,
+        });
+
+        let split = res.insights.split("\n").filter((s: string) => s.trim() !== "");
+
+        // Ensure exactly 3 insights
+        while (split.length < 3) split.push("Keep improving your habits 🌱");
+
+        setAiInsights(split.slice(0, 3));
+      } catch {
+        setAiInsights([
+          "You're making progress — keep going!",
+          "Try reducing high-impact habits like car usage.",
+          "Small daily changes lead to big environmental impact.",
+        ]);
+      }
+    }
+
+    loadInsights();
+  }, []);
+
+  const insights = [
+    {
+      icon: TrendingUp,
+      title: t("insights.pattern.title", "Usage Pattern Detected"),
+      desc: aiInsights[0],
+    },
+    {
+      icon: Leaf,
+      title: t("insights.meal.title", "Meal Impact Analysis"),
+      desc: aiInsights[1],
+    },
+    {
+      icon: BarChart3,
+      title: t("insights.commute.title", "Commute Optimization"),
+      desc: aiInsights[2],
+    },
+  ];
+
+  return (
+    <>
+      <section className="relative px-6 py-28">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.03] to-transparent" />
+        <div className="relative mx-auto max-w-5xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5">
+              <Brain className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                <Text value={t("insights.badge", "AI Insights")} />
+              </span>
+            </div>
+            <h2
+              className="text-3xl font-bold text-foreground sm:text-4xl lg:text-5xl"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              <Text value={t("insights.title", "AI-Powered Insights")} />
+            </h2>
+          </motion.div>
+
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {insights.map((insight, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.12 }}
+                className="rounded-2xl border border-border bg-card/60 p-6 text-left backdrop-blur-sm"
+              >
+                <div className="mb-4 inline-flex rounded-xl bg-primary/15 p-3">
+                  <insight.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Text value={insight.title} />
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {insight.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="mt-14"
+          >
+            <Button
+              size="lg"
+              onClick={() => setDialogOpen(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 text-base"
+            >
+              <Text value={t("insights.cta", "Start Your Journey")} />
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
+      <ComingSoonDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+    </>
+  );
+}
