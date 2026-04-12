@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { Leaf, Menu, X } from "lucide-react";
+import { Leaf, Menu, X, LogOut } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ComingSoonDialog from "./ComingSoonDialog";
+import { useAuth } from "@/context/AuthContext";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function Navbar() {
   const { t } = useTranslations();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -67,13 +71,31 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="hidden md:block">
-            <Button
-              onClick={() => setDialogOpen(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Text value={t("nav.getStarted", "Get Started")} />
-            </Button>
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-3">
+                {user.photoURL && (
+                  <img src={user.photoURL} alt="avatar" className="h-8 w-8 rounded-full border border-border" />
+                )}
+                <span className="text-sm text-muted-foreground max-w-[120px] truncate">{user.displayName || user.email}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signOut(auth)}
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => setDialogOpen(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Text value={t("nav.getStarted", "Get Started")} />
+              </Button>
+            )}
           </div>
 
           <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>

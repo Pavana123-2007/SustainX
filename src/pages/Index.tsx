@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useUserData } from "@/hooks/useUserData";
 import Navbar from "@/components/home/Navbar";
 import SpaceBackground from "@/components/home/SpaceBackground";
 import HeroSection from "@/components/home/HeroSection";
@@ -15,13 +16,11 @@ import TestimonialsSection from "@/components/home/TestimonialsSection";
 import SmartSuggestionsSection from "@/components/home/SmartSuggestionsSection";
 import Footer from "@/components/home/Footer";
 
-type Tier = "best" | "better" | "least";
-type SelectionMap = Record<string, { points: number; tier: Tier }>;
-
 const Index = () => {
-  const [selections, setSelections] = useState<SelectionMap>({});
+  const { user } = useAuth();
+  const { selections, setSelections } = useUserData(user?.uid ?? null);
 
-  const totalScore = Object.values(selections).reduce((a, b) => a + b.points, 0);
+  const totalScore  = Object.values(selections).reduce((a, b) => a + b.points, 0);
   const goodActions = Object.values(selections).filter((s) => s.points > 0).length;
   const badActions  = Object.values(selections).filter((s) => s.points < 0).length;
 
