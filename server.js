@@ -9,11 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 app.post("/ai", async (req, res) => {
+  if (!process.env.OPENAI_API_KEY) {
+    return res.json({ insights: "You're doing great! Keep improving your habits 🌱" });
+  }
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const { score, co2, goodActions, badActions } = req.body;
 
   try {
