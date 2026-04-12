@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
 import { Badge } from "@/components/ui/badge";
 import ObjectScannerDialog from "./ObjectScannerDialog";
+import XPBar from "./XPBar";
 
 const DETECTION_LABELS = [
   { label: "Plastic Bottle", x: "18%", y: "30%", color: "border-primary text-primary" },
@@ -43,6 +44,9 @@ export default function CameraScanSection() {
               )}
             />
           </p>
+          <div className="mt-6 max-w-sm">
+            <XPBar />
+          </div>
         </motion.div>
 
         {/* Right – mock camera */}

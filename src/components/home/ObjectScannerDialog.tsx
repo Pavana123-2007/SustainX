@@ -4,6 +4,8 @@ import { Camera, X, Leaf, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { analyzeImageWithGemini, ScanResult } from "@/lib/gemini";
 import { useTranslations, Text } from "@fimo/ui";
+import { updateUserProgress } from "@/utils/gamification";
+import EcoScoreDisplay from "./EcoScoreDisplay";
 
 interface ObjectScannerDialogProps {
   open: boolean;
@@ -15,6 +17,7 @@ export default function ObjectScannerDialog({ open, onOpenChange }: ObjectScanne
   const [status, setStatus] = useState<"idle" | "capturing" | "result" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [xpGained, setXpGained] = useState<number>(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,6 +86,9 @@ export default function ObjectScannerDialog({ open, onOpenChange }: ObjectScanne
 
     try {
       const analysis = await analyzeImageWithGemini(base64Image);
+      const updated = updateUserProgress(analysis.ecoScore);
+      const clamped = Math.max(0, Math.min(100, analysis.ecoScore));
+      setXpGained(clamped < 40 ? -Math.round((40 - clamped) * 1.5) : Math.round(clamped * 1.5));
       setResult(analysis);
       setStatus("result");
     } catch (error: any) {
@@ -198,12 +204,7 @@ export default function ObjectScannerDialog({ open, onOpenChange }: ObjectScanne
                     </p>
                   </div>
                   <div className="flex flex-col items-end shrink-0">
-                    <span className="text-6xl font-black text-emerald-400 leading-none">
-                      {result.ecoScore}
-                    </span>
-                    <span className="text-[10px] font-bold text-[#80808a] uppercase tracking-widest mt-1">
-                      Eco Score
-                    </span>
+                    <EcoScoreDisplay score={result.ecoScore} xpGained={xpGained} />
                   </div>
                 </div>
 

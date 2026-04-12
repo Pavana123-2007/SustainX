@@ -110,3 +110,8 @@ report.*.json
 .node_repl_history
 .lock-wscript
 lib-cov
+
+#kiro specs
+.kiro/
+.config.kiro
+requirements.md
