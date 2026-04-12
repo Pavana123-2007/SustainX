@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Users, TreePine, Zap, Globe } from "lucide-react";
 import { useTranslations, Text } from "@fimo/ui";
+import { getGlobalStats } from "@/api/sustainability";
 
 function AnimatedCounter({ target, duration = 2000 }: { target: number; duration?: number }) {
   const [count, setCount] = useState(0);
@@ -36,12 +37,42 @@ function AnimatedCounter({ target, duration = 2000 }: { target: number; duration
 
 export default function ImpactCounterStrip() {
   const { t } = useTranslations();
+  const [stats, setStats] = useState({
+    activeUsers: 12400,
+    treesEquivalent: 8650,
+    ecoActionsLogged: 45200,
+    co2Prevented: 1840,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const response = await getGlobalStats();
+        if (response.success && response.data) {
+          setStats(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching global stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
 
   const counters = [
-    { icon: Users, value: 12400, label: t("counter.users", "Active Users") },
-    { icon: TreePine, value: 8650, label: t("counter.trees", "Trees Equivalent Saved") },
-    { icon: Zap, value: 45200, label: t("counter.actions", "Eco Actions Logged") },
-    { icon: Globe, value: 1840, label: t("counter.co2", "Tonnes CO₂ Prevented") },
+    { icon: Users, value: stats.activeUsers, label: t("counter.users", "Active Users") },
+    { icon: TreePine, value: stats.treesEquivalent, label: t("counter.trees", "Trees Equivalent Saved") },
+    { icon: Zap, value: stats.ecoActionsLogged, label: t("counter.actions", "Eco Actions Logged") },
+    { 
+      icon: Globe, 
+      value: stats.co2Prevented, 
+      label: stats.co2Prevented >= 1000 
+        ? t("counter.co2", "Tonnes CO₂ Prevented")
+        : t("counter.co2kg", "kg CO₂ Prevented")
+    },
   ];
 
   return (

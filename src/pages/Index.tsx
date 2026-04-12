@@ -1,5 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
+import { useUserStats } from "@/hooks/useUserStats";
 import Navbar from "@/components/home/Navbar";
 import SpaceBackground from "@/components/home/SpaceBackground";
 import HeroSection from "@/components/home/HeroSection";
@@ -19,10 +20,12 @@ import Footer from "@/components/home/Footer";
 const Index = () => {
   const { user } = useAuth();
   const { selections, setSelections } = useUserData(user?.uid ?? null);
+  const { stats, refetch: refetchStats } = useUserStats();
 
-  const totalScore  = Object.values(selections).reduce((a, b) => a + b.points, 0);
-  const goodActions = Object.values(selections).filter((s) => s.points > 0).length;
-  const badActions  = Object.values(selections).filter((s) => s.points < 0).length;
+  // Use database stats for dashboard (real-time data from Neon)
+  const totalScore = stats.totalPoints;
+  const goodActions = stats.goodActionsCount;
+  const badActions = stats.badActionsCount;
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
@@ -31,7 +34,7 @@ const Index = () => {
         <Navbar />
         <HeroSection />
         <EcoFactsMarquee />
-        <QuickActionsSection selections={selections} onSelect={setSelections} goodActions={goodActions} />
+        <QuickActionsSection selections={selections} onSelect={setSelections} goodActions={goodActions} onActionSaved={refetchStats} />
         <SectionDivider />
         <DashboardSection score={totalScore} goodActions={goodActions} badActions={badActions} />
         <SectionDivider />

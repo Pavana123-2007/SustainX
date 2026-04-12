@@ -87,6 +87,7 @@ export default function DashboardSection({ score, goodActions, badActions }: Pro
                 <motion.circle
                   cx="50" cy="50" r="42" fill="none" stroke={scoreColor} strokeWidth="8" strokeLinecap="round"
                   strokeDasharray={264}
+                  initial={{ strokeDashoffset: 264 }}
                   animate={{ strokeDashoffset: dashOffset }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
                 />

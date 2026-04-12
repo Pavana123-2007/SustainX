@@ -1,64 +1,69 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Brain, TrendingUp, Leaf, BarChart3 } from "lucide-react";
-import { motion } from "motion/react";
-import { useTranslations, Text, type FimoString } from "@fimo/ui";
+import { motion, useAnimate } from "motion/react";
+import { useTranslations, Text } from "@fimo/ui";
+import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import ComingSoonDialog from "./ComingSoonDialog";
-import { getAIInsights } from "@/api/ai";
+import QuickActionsModal from "./QuickActionsModal";
+import { useSustainXInsights } from "@/hooks/useSustainXInsights";
+import { useUserActions } from "@/context/UserActionsContext";
 
 export default function SmartSuggestionsSection() {
   const { t } = useTranslations();
+  const navigate = useNavigate();
+  const { userActions } = useUserActions();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [quickActionsModalOpen, setQuickActionsModalOpen] = useState(false);
 
-  const [aiInsights, setAiInsights] = useState<string[]>([
-    "Loading insights...",
-    "",
-    "",
-  ]);
+  const { usageInsight, mealInsight, commuteInsight } = useSustainXInsights(userActions);
 
-  useEffect(() => {
-    async function loadInsights() {
-      try {
-        const res = await getAIInsights({
-          score: 76,
-          co2: 2.4,
-          goodActions: 5,
-          badActions: 2,
-        });
+  // Check if there are any actions logged today
+  const hasActionsToday = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = today.getTime();
+    
+    return userActions.some(action => action.timestamp >= todayTimestamp);
+  };
 
-        let split = res.insights.split("\n").filter((s: string) => s.trim() !== "");
+  const handleStartJourney = () => {
+    // Smooth scroll to top
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
 
-        // Ensure exactly 3 insights
-        while (split.length < 3) split.push("Keep improving your habits 🌱");
-
-        setAiInsights(split.slice(0, 3));
-      } catch {
-        setAiInsights([
-          "You're making progress — keep going!",
-          "Try reducing high-impact habits like car usage.",
-          "Small daily changes lead to big environmental impact.",
-        ]);
+    // After scroll animation, check actions and navigate
+    setTimeout(() => {
+      if (hasActionsToday()) {
+        // Navigate to analytics if actions exist
+        navigate('/analytics');
+      } else {
+        // Open Quick Actions modal if no actions today
+        setQuickActionsModalOpen(true);
       }
-    }
-
-    loadInsights();
-  }, []);
+    }, 800); // Wait for scroll animation to complete
+  };
 
   const insights = [
     {
       icon: TrendingUp,
       title: t("insights.pattern.title", "Usage Pattern Detected"),
-      desc: aiInsights[0],
+      desc: usageInsight.description,
+      status: usageInsight.status,
     },
     {
       icon: Leaf,
       title: t("insights.meal.title", "Meal Impact Analysis"),
-      desc: aiInsights[1],
+      desc: mealInsight.description,
+      status: mealInsight.status,
     },
     {
       icon: BarChart3,
       title: t("insights.commute.title", "Commute Optimization"),
-      desc: aiInsights[2],
+      desc: commuteInsight.description,
+      status: commuteInsight.status,
     },
   ];
 
@@ -119,7 +124,7 @@ export default function SmartSuggestionsSection() {
           >
             <Button
               size="lg"
-              onClick={() => setDialogOpen(true)}
+              onClick={handleStartJourney}
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 text-base"
             >
               <Text value={t("insights.cta", "Start Your Journey")} />
@@ -129,6 +134,7 @@ export default function SmartSuggestionsSection() {
       </section>
 
       <ComingSoonDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <QuickActionsModal open={quickActionsModalOpen} onOpenChange={setQuickActionsModalOpen} />
     </>
   );
 }
