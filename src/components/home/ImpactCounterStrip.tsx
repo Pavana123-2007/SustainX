@@ -48,9 +48,19 @@ export default function ImpactCounterStrip() {
   useEffect(() => {
     async function fetchStats() {
       try {
+        console.log('[ImpactCounterStrip] Fetching global stats...');
         const response = await getGlobalStats();
+        console.log('[ImpactCounterStrip] Response:', response);
+        
         if (response.success && response.data) {
+          console.log('[ImpactCounterStrip] Setting stats:', response.data);
           setStats(response.data);
+          
+          if (response.warning) {
+            console.warn('[ImpactCounterStrip] Warning:', response.warning);
+          }
+        } else {
+          console.error('[ImpactCounterStrip] Failed to fetch stats:', response.error);
         }
       } catch (error) {
         console.error("Error fetching global stats:", error);

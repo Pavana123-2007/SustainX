@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import pg from "pg";
+import { neon } from "@neondatabase/serverless";
 import admin from "firebase-admin";
 
 dotenv.config({ path: ".env.local" });
@@ -34,30 +34,44 @@ if (!admin.apps.length && !DEV_MODE) {
   console.log("[Server] Running in DEVELOPMENT MODE - Firebase Admin verification disabled");
 }
 
-// Initialize Postgres client
-const { Pool } = pg;
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+// Initialize Neon serverless client (works over HTTPS - no port 5432 blocking!)
+const sql = neon(process.env.DATABASE_URL);
 
-// Handle pool errors to prevent crashes
-pool.on('error', (err) => {
-  console.error('[Database Pool] Unexpected error:', err.message);
-  // Don't exit the process, just log the error
-});
-
-// Test database connection
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('[Database] Connection test failed:', err.message);
-    console.log('[Server] Continuing without database connection');
-  } else {
-    console.log('[Database] Connected successfully');
+// Test database connection with retry logic
+async function testDatabaseConnection() {
+  const maxRetries = 3;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const result = await sql`SELECT NOW() as current_time`;
+      console.log('[Database] Connected successfully via Neon Serverless Driver');
+      console.log('[Database] Current time:', result[0].current_time);
+      return true;
+    } catch (err) {
+      console.error(`[Database] Connection attempt ${i + 1}/${maxRetries} failed:`, err.message);
+      if (i < maxRetries - 1) {
+        console.log('[Database] Retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else {
+        console.error('[Database] All connection attempts failed');
+        console.log('[Server] Continuing without database connection');
+        return false;
+      }
+    }
   }
-});
+}
+
+// Test connection on startup
+testDatabaseConnection();
+
+// Keep database connection alive (prevents auto-pause on Neon)
+setInterval(async () => {
+  try {
+    await sql`SELECT 1`;
+    console.log('[Database] Keep-alive ping successful');
+  } catch (error) {
+    console.error('[Database] Keep-alive ping failed:', error.message);
+  }
+}, 4 * 60 * 1000); // Every 4 minutes
 
 app.post("/ai", async (req, res) => {
   if (!process.env.OPENAI_API_KEY) {
@@ -155,19 +169,17 @@ app.post("/api/logSustainabilityAction", async (req, res) => {
 
     // Insert into database
     try {
-      const query = `
+      const result = await sql`
         INSERT INTO user_impact_logs (user_id, category, action_label, points, created_at)
-        VALUES ($1, $2, $3, $4, NOW())
+        VALUES (${uid}, ${category}, ${actionLabel}, ${points}, NOW())
         RETURNING id, created_at
       `;
-
-      const result = await pool.query(query, [uid, category, actionLabel, points]);
 
       res.json({
         success: true,
         data: {
-          id: result.rows[0].id,
-          createdAt: result.rows[0].created_at,
+          id: result[0].id,
+          createdAt: result[0].created_at,
         },
       });
     } catch (dbError) {
@@ -247,41 +259,37 @@ app.post("/api/getUserStats", async (req, res) => {
     console.log('[getUserStats] Querying database for uid:', uid, 'date range:', today, 'to', tomorrow);
 
     // Query for today's stats
-    const todayQuery = `
+    const todayResult = await sql`
       SELECT 
         COALESCE(SUM(points), 0) as total_points,
         COUNT(CASE WHEN points > 0 THEN 1 END) as good_actions,
         COUNT(CASE WHEN points < 0 THEN 1 END) as bad_actions
       FROM user_impact_logs
-      WHERE user_id = $1 
-        AND created_at >= $2 
-        AND created_at < $3
+      WHERE user_id = ${uid}
+        AND created_at >= ${today}
+        AND created_at < ${tomorrow}
     `;
-
-    const todayResult = await pool.query(todayQuery, [uid, today, tomorrow]);
-    console.log('[getUserStats] Today result:', todayResult.rows[0]);
+    console.log('[getUserStats] Today result:', todayResult[0]);
 
     // Query for all-time stats
-    const allTimeQuery = `
+    const allTimeResult = await sql`
       SELECT 
         COALESCE(SUM(points), 0) as total_points
       FROM user_impact_logs
-      WHERE user_id = $1
+      WHERE user_id = ${uid}
     `;
-
-    const allTimeResult = await pool.query(allTimeQuery, [uid]);
-    console.log('[getUserStats] All-time result:', allTimeResult.rows[0]);
+    console.log('[getUserStats] All-time result:', allTimeResult[0]);
 
     const responseData = {
       success: true,
       data: {
         today: {
-          totalPoints: parseInt(todayResult.rows[0].total_points),
-          goodActionsCount: parseInt(todayResult.rows[0].good_actions),
-          badActionsCount: parseInt(todayResult.rows[0].bad_actions),
+          totalPoints: parseInt(todayResult[0].total_points),
+          goodActionsCount: parseInt(todayResult[0].good_actions),
+          badActionsCount: parseInt(todayResult[0].bad_actions),
         },
         allTime: {
-          totalPoints: parseInt(allTimeResult.rows[0].total_points),
+          totalPoints: parseInt(allTimeResult[0].total_points),
         },
       },
     };
@@ -300,9 +308,11 @@ app.post("/api/getUserStats", async (req, res) => {
 
 // API route to get global impact stats
 app.get("/api/getGlobalStats", async (req, res) => {
+  console.log('[getGlobalStats] Request received');
   try {
     // Check if database is configured
     if (!process.env.DATABASE_URL) {
+      console.log('[getGlobalStats] DATABASE_URL not configured, returning mock data');
       // Return mock data if database not configured
       return res.json({
         success: true,
@@ -316,20 +326,36 @@ app.get("/api/getGlobalStats", async (req, res) => {
       });
     }
 
-    // Query for global stats
-    const statsQuery = `
-      SELECT 
-        COUNT(DISTINCT user_id) as active_users,
-        COUNT(*) as total_actions,
-        COALESCE(SUM(points), 0) as total_points
-      FROM user_impact_logs
-    `;
+    console.log('[getGlobalStats] Querying database for global stats...');
 
-    const result = await pool.query(statsQuery);
+    // Query for global stats with retry logic
+    let result;
+    const maxRetries = 3;
     
-    const activeUsers = parseInt(result.rows[0].active_users) || 0;
-    const totalActions = parseInt(result.rows[0].total_actions) || 0;
-    const totalPoints = parseInt(result.rows[0].total_points) || 0;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        result = await sql`
+          SELECT 
+            COUNT(DISTINCT user_id) as active_users,
+            COUNT(*) as total_actions,
+            COALESCE(SUM(points), 0) as total_points
+          FROM user_impact_logs
+        `;
+        break; // Success, exit retry loop
+      } catch (queryError) {
+        console.error(`[getGlobalStats] Query attempt ${i + 1}/${maxRetries} failed:`, queryError.message);
+        if (i === maxRetries - 1) {
+          throw queryError; // Last attempt failed, throw error
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+      }
+    }
+
+    console.log('[getGlobalStats] Database result:', result[0]);
+    
+    const activeUsers = parseInt(result[0].active_users) || 0;
+    const totalActions = parseInt(result[0].total_actions) || 0;
+    const totalPoints = parseInt(result[0].total_points) || 0;
     
     // Calculate derived metrics
     // 1 point = 0.5 kg CO2, trees equivalent = points / 10
@@ -340,7 +366,7 @@ app.get("/api/getGlobalStats", async (req, res) => {
       ? Math.floor(co2InKg / 1000) // Show in tonnes if >= 1000kg
       : Math.floor(co2InKg); // Show in kg if < 1000kg
 
-    res.json({
+    const responseData = {
       success: true,
       data: {
         activeUsers: activeUsers,
@@ -348,7 +374,10 @@ app.get("/api/getGlobalStats", async (req, res) => {
         ecoActionsLogged: totalActions,
         co2Prevented: co2Prevented,
       },
-    });
+    };
+
+    console.log('[getGlobalStats] Sending response:', responseData);
+    res.json(responseData);
   } catch (error) {
     console.error("Error fetching global stats:", error);
     // Return mock data on error
@@ -361,6 +390,164 @@ app.get("/api/getGlobalStats", async (req, res) => {
         co2Prevented: 1840,
       },
       warning: "Database error, showing mock data: " + error.message,
+    });
+  }
+});
+
+// API route to submit a testimonial
+app.post("/api/submitTestimonial", async (req, res) => {
+  console.log('[submitTestimonial] Request received');
+  try {
+    const { userName, userTitle, rating, comment, idToken } = req.body;
+
+    // Validate required fields
+    if (!userName || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: userName, rating, or comment",
+      });
+    }
+
+    // Validate rating
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        error: "Rating must be between 1 and 5",
+      });
+    }
+
+    let uid = "anonymous"; // Default for non-logged-in users
+
+    // Verify Firebase ID token and get uid (skip in dev mode)
+    if (!DEV_MODE && idToken) {
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        uid = decodedToken.uid;
+      } catch (error) {
+        console.error("[Auth Error]", error.message);
+        // Allow anonymous testimonials, just log the error
+        console.log("[submitTestimonial] Proceeding with anonymous submission");
+      }
+    } else if (DEV_MODE && idToken) {
+      console.log("[Dev Mode] Skipping Firebase token verification");
+      try {
+        const payload = JSON.parse(Buffer.from(idToken.split('.')[1], 'base64').toString());
+        uid = payload.user_id || payload.sub || "anonymous";
+      } catch (e) {
+        uid = "anonymous";
+      }
+    }
+
+    // Insert into database
+    const result = await sql`
+      INSERT INTO testimonials (user_id, user_name, user_title, rating, comment, is_approved, created_at)
+      VALUES (${uid}, ${userName}, ${userTitle || null}, ${rating}, ${comment}, false, NOW())
+      RETURNING id, created_at
+    `;
+
+    console.log('[submitTestimonial] Testimonial submitted:', result[0]);
+
+    res.json({
+      success: true,
+      data: {
+        id: result[0].id,
+        createdAt: result[0].created_at,
+      },
+      message: "Thank you for your feedback! Your testimonial will be reviewed and published soon.",
+    });
+  } catch (error) {
+    console.error("Error submitting testimonial:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to submit testimonial",
+      message: error.message,
+    });
+  }
+});
+
+// API route to get approved testimonials
+app.get("/api/getTestimonials", async (req, res) => {
+  console.log('[getTestimonials] Request received');
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
+
+    // Query for approved testimonials
+    const testimonials = await sql`
+      SELECT 
+        id,
+        user_name,
+        user_title,
+        rating,
+        comment,
+        created_at
+      FROM testimonials
+      WHERE is_approved = true
+      ORDER BY created_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `;
+
+    console.log('[getTestimonials] Found', testimonials.length, 'testimonials');
+
+    res.json({
+      success: true,
+      data: testimonials,
+      count: testimonials.length,
+    });
+  } catch (error) {
+    console.error("Error fetching testimonials:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch testimonials",
+      message: error.message,
+    });
+  }
+});
+
+// API route to approve a testimonial (admin only)
+app.post("/api/approveTestimonial", async (req, res) => {
+  console.log('[approveTestimonial] Request received');
+  try {
+    const { testimonialId, idToken } = req.body;
+
+    if (!testimonialId) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required field: testimonialId",
+      });
+    }
+
+    // TODO: Add admin verification here
+    // For now, anyone can approve in DEV_MODE
+
+    const result = await sql`
+      UPDATE testimonials
+      SET is_approved = true, updated_at = NOW()
+      WHERE id = ${testimonialId}
+      RETURNING id, is_approved
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Testimonial not found",
+      });
+    }
+
+    console.log('[approveTestimonial] Approved testimonial:', result[0]);
+
+    res.json({
+      success: true,
+      data: result[0],
+      message: "Testimonial approved successfully",
+    });
+  } catch (error) {
+    console.error("Error approving testimonial:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to approve testimonial",
+      message: error.message,
     });
   }
 });

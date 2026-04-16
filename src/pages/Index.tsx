@@ -42,7 +42,7 @@ const Index = () => {
         <SectionDivider />
         <CameraScanSection />
         <ImpactCounterStrip />
-        <FutureSimulatorSection />
+        <FutureSimulatorSection stats={stats} />
         <SectionDivider />
         <ImproveMyDaySection />
         <TestimonialsSection />

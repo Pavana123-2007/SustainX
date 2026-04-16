@@ -1,8 +1,72 @@
 import { motion } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
+import { useEffect, useState } from "react";
 
-export default function FutureSimulatorSection() {
+interface Props {
+  stats: {
+    totalPoints: number;
+    goodActionsCount: number;
+    badActionsCount: number;
+    allTimePoints: number;
+  };
+}
+
+export default function FutureSimulatorSection({ stats }: Props) {
   const { t } = useTranslations();
+  const [co2Data, setCo2Data] = useState({
+    badFuture: 132,
+    goodFuture: 58,
+  });
+
+  useEffect(() => {
+    console.log('[FutureSimulator] Stats updated:', stats);
+    
+    // Calculate CO₂ based on user's actual points
+    // 1 point = 0.5 kg CO₂
+    // Project weekly average based on today's data
+    
+    const todayPoints = stats.totalPoints;
+    const todayCO2 = Math.abs(todayPoints * 0.5); // Convert points to kg CO₂
+    
+    console.log('[FutureSimulator] Today points:', todayPoints);
+    console.log('[FutureSimulator] Today CO2:', todayCO2);
+    console.log('[FutureSimulator] Good actions:', stats.goodActionsCount, 'Bad actions:', stats.badActionsCount);
+    
+    // Project to weekly (multiply by 7)
+    const weeklyCO2 = todayCO2 * 7;
+    console.log('[FutureSimulator] Weekly CO2:', weeklyCO2);
+    
+    // If user has data, calculate based on their actions
+    if (stats.goodActionsCount > 0 || stats.badActionsCount > 0) {
+      // Bad future: If user continues current bad habits
+      // Calculate based on ratio of bad to good actions
+      const totalActions = stats.goodActionsCount + stats.badActionsCount;
+      const badActionPercentage = stats.badActionsCount / totalActions;
+      
+      // If mostly bad actions, project higher CO2
+      // If mostly good actions, still show some risk
+      const badFutureCO2 = weeklyCO2 * (1 + badActionPercentage * 2);
+      
+      // Good future: If user improves (assume mostly positive actions)
+      // Reduce by the improvement potential
+      const goodActionPercentage = stats.goodActionsCount / totalActions;
+      const goodFutureCO2 = weeklyCO2 * (1 - goodActionPercentage * 0.5);
+      
+      console.log('[FutureSimulator] Bad future:', badFutureCO2, 'Good future:', goodFutureCO2);
+      
+      setCo2Data({
+        badFuture: Math.max(Math.round(badFutureCO2), 50), // Minimum 50 kg
+        goodFuture: Math.max(Math.round(goodFutureCO2), 15), // Minimum 15 kg
+      });
+    } else {
+      // No data yet, show defaults
+      console.log('[FutureSimulator] No data, using defaults');
+      setCo2Data({
+        badFuture: 132,
+        goodFuture: 58,
+      });
+    }
+  }, [stats]);
 
   return (
     <section id="future" className="relative px-6 py-28" style={{ background: "#0d1117" }}>
@@ -45,16 +109,30 @@ export default function FutureSimulatorSection() {
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <span className="text-2xl font-bold text-orange-400" style={{ fontFamily: "var(--font-heading)" }}>
-                    132 kg CO₂
-                  </span>
+                  <motion.span 
+                    key={co2Data.badFuture}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-2xl font-bold text-orange-400" 
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    {co2Data.badFuture} kg CO₂
+                  </motion.span>
                 </div>
               </motion.div>
             </div>
             <div className="mt-6 text-center">
-              <p className="text-3xl font-bold text-orange-400" style={{ fontFamily: "var(--font-heading)" }}>
-                132 kg CO₂
-              </p>
+              <motion.p 
+                key={co2Data.badFuture}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="text-3xl font-bold text-orange-400" 
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {co2Data.badFuture} kg CO₂
+              </motion.p>
               <p className="mt-1 text-sm text-muted-foreground">
                 <Text value={t("future.perWeek", "Equivalent / Week")} />
               </p>
@@ -99,16 +177,30 @@ export default function FutureSimulatorSection() {
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <span className="text-2xl font-bold text-emerald-400" style={{ fontFamily: "var(--font-heading)" }}>
-                    58 kg CO₂
-                  </span>
+                  <motion.span 
+                    key={co2Data.goodFuture}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-2xl font-bold text-emerald-400" 
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    {co2Data.goodFuture} kg CO₂
+                  </motion.span>
                 </div>
               </motion.div>
             </div>
             <div className="mt-6 text-center">
-              <p className="text-3xl font-bold text-emerald-400" style={{ fontFamily: "var(--font-heading)" }}>
-                58 kg CO₂
-              </p>
+              <motion.p 
+                key={co2Data.goodFuture}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="text-3xl font-bold text-emerald-400" 
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {co2Data.goodFuture} kg CO₂
+              </motion.p>
               <p className="mt-1 text-sm text-muted-foreground">
                 <Text value={t("future.perWeek", "Equivalent / Week")} />
               </p>
