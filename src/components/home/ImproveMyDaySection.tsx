@@ -1,18 +1,53 @@
 import { useState } from "react";
-import { Zap, Lightbulb } from "lucide-react";
+import { Zap, Lightbulb, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
 import { Button } from "@/components/ui/button";
+import { generateDailyTips, DailyTip } from "@/lib/gemini";
 
-export default function ImproveMyDaySection() {
+interface Props {
+  stats?: {
+    totalPoints: number;
+    goodActionsCount: number;
+    badActionsCount: number;
+  };
+}
+
+export default function ImproveMyDaySection({ stats }: Props) {
   const { t } = useTranslations();
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<DailyTip[]>([]);
+  const [summary, setSummary] = useState(t("improve.equivalent", "That's equivalent to keeping a light off for 12 hours!"));
+  const [loading, setLoading] = useState(false);
 
-  const suggestions = [
-    { emoji: "🚶", text: t("improve.walk", "Walk instead of driving — save 1.2 kg CO₂") },
-    { emoji: "🧴", text: t("improve.bottle", "Use a reusable bottle — save 0.5 kg CO₂") },
-    { emoji: "🥗", text: t("improve.cook", "Cook at home tonight — save 0.8 kg CO₂") },
-  ];
+  const handleImproveMyDay = async () => {
+    if (showSuggestions) {
+      setShowSuggestions(false);
+      return;
+    }
+
+    if (suggestions.length === 0) {
+      setLoading(true);
+      try {
+        const response = await generateDailyTips(stats);
+        setSuggestions(response.tips);
+        setSummary(response.summary || t("improve.equivalent", "That's equivalent to keeping a light off for 12 hours!"));
+      } catch (error) {
+        console.error("Failed to generate tips:", error);
+        // Fallback or error handling
+        setSuggestions([
+          { emoji: "🚶", text: t("improve.walk", "Walk instead of driving — save 1.2 kg CO₂") },
+          { emoji: "🧴", text: t("improve.bottle", "Use a reusable bottle — save 0.5 kg CO₂") },
+          { emoji: "🥗", text: t("improve.cook", "Cook at home tonight — save 0.8 kg CO₂") },
+        ]);
+        setSummary(t("improve.equivalent", "That's equivalent to keeping a light off for 12 hours!"));
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    setShowSuggestions(true);
+  };
 
   return (
     <section className="relative px-6 py-28">
@@ -43,10 +78,11 @@ export default function ImproveMyDaySection() {
         >
           <Button
             size="lg"
-            onClick={() => setShowSuggestions(!showSuggestions)}
+            onClick={handleImproveMyDay}
+            disabled={loading}
             className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 py-6 text-lg shadow-[0_0_30px_-6px_rgba(16,185,129,0.4)]"
           >
-            <Zap className="mr-2 h-5 w-5" />
+            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
             <Text value={t("improve.button", "Improve My Day")} />
           </Button>
         </motion.div>
@@ -82,10 +118,7 @@ export default function ImproveMyDaySection() {
               >
                 <Lightbulb className="h-4 w-4 text-accent" />
                 <Text
-                  value={t(
-                    "improve.equivalent",
-                    "That's equivalent to keeping a light off for 12 hours!"
-                  )}
+                  value={summary}
                 />
               </motion.div>
             </motion.div>

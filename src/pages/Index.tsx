@@ -44,7 +44,7 @@ const Index = () => {
         <ImpactCounterStrip />
         <FutureSimulatorSection stats={stats} />
         <SectionDivider />
-        <ImproveMyDaySection />
+        <ImproveMyDaySection stats={{ totalPoints: totalScore, goodActionsCount: goodActions, badActionsCount: badActions }} />
         <TestimonialsSection />
         <SectionDivider />
         <SmartSuggestionsSection />

@@ -79,16 +79,8 @@ export default function HeroSection() {
           <motion.div variants={item} className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Button
               size="lg"
-              onClick={() => setDialogOpen(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 shadow-[0_0_30px_-5px_rgba(16,185,129,0.4)]"
-            >
-              <Text value={t("hero.startNow", "Start Now")} />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
               onClick={scrollToFeatures}
-              className="border-border text-foreground hover:bg-secondary text-base px-8 backdrop-blur-sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 shadow-[0_0_30px_-5px_rgba(16,185,129,0.4)]"
             >
               <Text value={t("hero.explore", "Explore Features")} />
             </Button>

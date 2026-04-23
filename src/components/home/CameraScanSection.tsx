@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Camera, Recycle, Scan } from "lucide-react";
+import { Camera, Scan } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
 import { Badge } from "@/components/ui/badge";
@@ -106,24 +106,7 @@ export default function CameraScanSection() {
             </div>
           </div>
 
-          {/* Impact result card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.6 }}
-            className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-card/80 p-4 backdrop-blur-sm"
-          >
-            <Recycle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                <Text value={t("camera.impact", "Impact: 0.5 kg CO₂")} />
-              </p>
-              <p className="text-xs text-muted-foreground">
-                <Text value={t("camera.suggestion", "Use a reusable bottle instead")} />
-              </p>
-            </div>
-          </motion.div>
+
         </motion.div>
       </div>
 

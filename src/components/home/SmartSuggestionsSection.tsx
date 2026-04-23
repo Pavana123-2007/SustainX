@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Brain, TrendingUp, Leaf, BarChart3 } from "lucide-react";
 import { motion, useAnimate } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
-import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import ComingSoonDialog from "./ComingSoonDialog";
 import QuickActionsModal from "./QuickActionsModal";
@@ -11,7 +10,6 @@ import { useUserActions } from "@/context/UserActionsContext";
 
 export default function SmartSuggestionsSection() {
   const { t } = useTranslations();
-  const navigate = useNavigate();
   const { userActions } = useUserActions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [quickActionsModalOpen, setQuickActionsModalOpen] = useState(false);
@@ -27,24 +25,7 @@ export default function SmartSuggestionsSection() {
     return userActions.some(action => action.timestamp >= todayTimestamp);
   };
 
-  const handleStartJourney = () => {
-    // Smooth scroll to top
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
 
-    // After scroll animation, check actions and navigate
-    setTimeout(() => {
-      if (hasActionsToday()) {
-        // Navigate to analytics if actions exist
-        navigate('/analytics');
-      } else {
-        // Open Quick Actions modal if no actions today
-        setQuickActionsModalOpen(true);
-      }
-    }, 800); // Wait for scroll animation to complete
-  };
 
   const insights = [
     {
@@ -115,21 +96,6 @@ export default function SmartSuggestionsSection() {
             ))}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.4 }}
-            className="mt-14"
-          >
-            <Button
-              size="lg"
-              onClick={handleStartJourney}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 text-base"
-            >
-              <Text value={t("insights.cta", "Start Your Journey")} />
-            </Button>
-          </motion.div>
         </div>
       </section>
 

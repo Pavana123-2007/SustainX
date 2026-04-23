@@ -1,4 +1,4 @@
-import { TrendingDown, TrendingUp, TreePine, Info } from "lucide-react";
+import { TrendingDown, TrendingUp, Info } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
 import { Badge } from "@/components/ui/badge";
@@ -9,17 +9,17 @@ interface Props {
   badActions: number;
 }
 
-// Max possible = 15 (3 × +5), min = -6 (3 × -2)
+// Max possible = 50, min = -6
 function getScoreColor(score: number): string {
   if (score >= 9)  return "#00C896";
   if (score >= 3)  return "#FACC15";
   return "#F87171";
 }
 
-// Normalize score to 0–100 for the ring (range is -6 to 15, span = 21)
+// Normalize score to 0–100 for the ring (range is 0 to 50)
 function normalizeScore(score: number): number {
-  const clamped = Math.max(-6, Math.min(15, score));
-  return Math.round(((clamped + 6) / 21) * 100);
+  const clamped = Math.max(0, Math.min(50, score));
+  return Math.round((clamped / 50) * 100);
 }
 
 export default function DashboardSection({ score, goodActions, badActions }: Props) {
@@ -52,16 +52,9 @@ export default function DashboardSection({ score, goodActions, badActions }: Pro
           <p className="mt-4 max-w-md text-lg leading-relaxed text-muted-foreground">
             <Text value={t("dashboard.description", "See your real-time impact score, track CO₂ savings, and compare good vs bad actions — all in one glance.")} />
           </p>
-          <div className="mt-6 flex items-center gap-2 text-primary">
-            <TreePine className="h-5 w-5" />
-            <span className="text-sm font-medium">
-              <Text value={t("dashboard.equivalent", "Equivalent to planting 3 trees 🌳")} />
-            </span>
-          </div>
-
           {/* Legend */}
-          <div className="mt-5 inline-flex items-center gap-2 rounded-xl border border-border bg-card/60 px-4 py-2.5 text-xs backdrop-blur-sm">
-            <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <div className="mt-5 inline-flex items-center gap-3 rounded-xl border border-border bg-card/60 px-5 py-3 text-base backdrop-blur-sm">
+            <Info className="h-4 w-4 text-muted-foreground shrink-0" />
             <span style={{ color: "#00C896" }} className="font-medium">Best: +5</span>
             <span className="text-muted-foreground">|</span>
             <span style={{ color: "#FACC15" }} className="font-medium">Better: +3</span>
@@ -114,7 +107,7 @@ export default function DashboardSection({ score, goodActions, badActions }: Pro
               >
                 {score} pts
               </motion.p>
-              <p className="text-xs text-muted-foreground mt-0.5">max 15 · min −6</p>
+              <p className="text-xs text-muted-foreground mt-0.5">max 50 · min −6</p>
             </div>
           </div>
 
