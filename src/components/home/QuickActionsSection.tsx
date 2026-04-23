@@ -5,6 +5,7 @@ import { useTranslations, Text } from "@fimo/ui";
 import { Badge } from "@/components/ui/badge";
 import { logSustainabilityAction } from "@/api/sustainability";
 import { useUserActions } from "@/context/UserActionsContext";
+import { playPop, playXPGain } from "@/utils/sounds";
 
 // tier: "best" | "better" | "least"
 interface ActionOption {
@@ -75,49 +76,29 @@ export default function QuickActionsSection({ selections, onSelect, goodActions,
   ];
 
   const handleAction = async (catId: string, points: number, tier: "best" | "better" | "least", label: string) => {
-    // Set loading state for this category
-    setLoadingActions(prev => ({ ...prev, [catId]: true }));
+    playPop(tier);
+    if (points > 0) playXPGain();
 
-    try {
-      // Call API to save to database - each click is a unique event
-      const result = await logSustainabilityAction({
-        category: catId,
-        actionLabel: label,
-        points: points,
+    // Update UI immediately regardless of backend
+    onSelect({ ...selections, [catId]: { points, tier } });
+    addAction(catId, label);
+    setSuccessAnimations(prev => ({ ...prev, [catId]: Date.now() }));
+    setTimeout(() => {
+      setSuccessAnimations(prev => {
+        const newState = { ...prev };
+        delete newState[catId];
+        return newState;
       });
+    }, 2000);
 
-      if (result.success) {
-        // Update local state to show last selected action
-        onSelect({ ...selections, [catId]: { points, tier } });
-        
-        // Update context for insights
-        addAction(catId, label);
-        
-        // Trigger success animation
-        setSuccessAnimations(prev => ({ ...prev, [catId]: Date.now() }));
-        
-        // Trigger refetch of stats from database (if callback provided)
-        if (onActionSaved) {
-          await onActionSaved();
-        }
-        
-        // Clear success animation after 2 seconds
-        setTimeout(() => {
-          setSuccessAnimations(prev => {
-            const newState = { ...prev };
-            delete newState[catId];
-            return newState;
-          });
-        }, 2000);
-      } else {
-        console.error("Failed to log action:", result.error);
-        alert("Failed to save action. Please try again.");
-      }
+    // Try to persist to backend silently
+    setLoadingActions(prev => ({ ...prev, [catId]: true }));
+    try {
+      const result = await logSustainabilityAction({ category: catId, actionLabel: label, points });
+      if (result.success && onActionSaved) await onActionSaved();
     } catch (error) {
-      console.error("Error logging action:", error);
-      alert("Failed to save action. Please try again.");
+      console.warn("Could not sync action to backend:", error);
     } finally {
-      // Remove loading state
       setLoadingActions(prev => ({ ...prev, [catId]: false }));
     }
   };

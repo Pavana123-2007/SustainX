@@ -1,134 +1,89 @@
 import { useMemo } from 'react';
 
-interface UserAction {
-  type: string;
-  value: string;
-  timestamp: number;
+interface UserStats {
+  totalPoints: number;
+  goodActionsCount: number;
+  badActionsCount: number;
+  allTimePoints: number;
 }
 
-interface UsageInsight {
-  status: 'detected' | 'improving';
-  description: string;
-  pointsLast24h: number;
-  pointsPrevious24h: number;
-  change: number;
-}
+type Selections = Record<string, { points: number; tier: 'best' | 'better' | 'least' }>;
 
-interface MealInsight {
+interface Insight {
   status: 'detected' | 'improving';
   description: string;
-  mostFrequentFood: string;
-  count: number;
-}
-
-interface CommuteInsight {
-  status: 'detected' | 'improving';
-  description: string;
-  driveCount: number;
 }
 
 interface SustainXInsights {
-  usageInsight: UsageInsight;
-  mealInsight: MealInsight;
-  commuteInsight: CommuteInsight;
+  usageInsight: Insight;
+  mealInsight: Insight;
+  commuteInsight: Insight;
 }
 
-const POINTS_MAP: Record<string, number> = {
-  'Walk': 10,
-  'Bike': 15,
-  'Public Transport': 8,
-  'Drive': -5,
-  'Vegetarian': 12,
-  'Vegan': 15,
-  'Meat': -3,
-  'Recycle': 5,
-  'Reuse': 8,
-};
-
-const FOOD_ALTERNATIVES: Record<string, string> = {
-  'Meat': 'Try switching to plant-based proteins like lentils, chickpeas, or tofu for a greener meal!',
-  'Vegetarian': 'Great choice! Consider going vegan occasionally for even more impact.',
-};
-
-export const useSustainXInsights = (userActions: UserAction[]): SustainXInsights => {
+export const useSustainXInsights = (
+  _unused: unknown,
+  stats?: UserStats,
+  selections?: Selections
+): SustainXInsights => {
   return useMemo(() => {
-    const now = Date.now();
-    const last24h = now - 24 * 60 * 60 * 1000;
-    const previous24h = last24h - 24 * 60 * 60 * 1000;
+    const totalPoints = stats?.totalPoints ?? 0;
+    const goodActions = stats?.goodActionsCount ?? 0;
+    const badActions = stats?.badActionsCount ?? 0;
 
-    // Calculate usage insight
-    const actionsLast24h = userActions.filter(a => a.timestamp >= last24h);
-    const actionsPrevious24h = userActions.filter(
-      a => a.timestamp >= previous24h && a.timestamp < last24h
-    );
+    // --- Usage insight from real DB stats ---
+    let usageDesc: string;
+    let usageStatus: 'detected' | 'improving';
+    if (goodActions === 0 && badActions === 0) {
+      usageDesc = 'No actions logged yet today. Start tracking to see your impact!';
+      usageStatus = 'detected';
+    } else if (totalPoints > 0) {
+      usageDesc = `Great progress! You've earned ${totalPoints} point${totalPoints !== 1 ? 's' : ''} today with ${goodActions} eco-friendly action${goodActions !== 1 ? 's' : ''}.`;
+      usageStatus = 'improving';
+    } else {
+      usageDesc = `You have ${badActions} high-impact action${badActions !== 1 ? 's' : ''} today. Small swaps can make a big difference!`;
+      usageStatus = 'detected';
+    }
 
-    const pointsLast24h = actionsLast24h.reduce(
-      (sum, action) => sum + (POINTS_MAP[action.value] || 0),
-      0
-    );
-    const pointsPrevious24h = actionsPrevious24h.reduce(
-      (sum, action) => sum + (POINTS_MAP[action.value] || 0),
-      0
-    );
+    // --- Meal insight from selections (key = "food") ---
+    const food = selections?.['food'];
+    let mealDesc: string;
+    let mealStatus: 'detected' | 'improving';
+    if (!food) {
+      mealDesc = 'No meal choices tracked yet. Log your food habits to get personalised insights!';
+      mealStatus = 'detected';
+    } else if (food.tier === 'best') {
+      mealDesc = "Excellent! You're choosing Vegan — the most eco-friendly option. Keep it up!";
+      mealStatus = 'improving';
+    } else if (food.tier === 'better') {
+      mealDesc = "Good choice going Vegetarian! Consider going fully vegan occasionally for even more impact.";
+      mealStatus = 'improving';
+    } else {
+      mealDesc = "Meat has a high carbon footprint. Try swapping for plant-based proteins to save CO₂.";
+      mealStatus = 'detected';
+    }
 
-    const change = pointsLast24h - pointsPrevious24h;
-    const usageInsight: UsageInsight = {
-      status: change >= 0 ? 'improving' : 'detected',
-      description:
-        change > 0
-          ? `Great progress! You've earned ${change} more points than yesterday.`
-          : change < 0
-          ? `Your points decreased by ${Math.abs(change)} compared to yesterday. Let's get back on track!`
-          : 'Your points are steady. Keep up the consistency!',
-      pointsLast24h,
-      pointsPrevious24h,
-      change,
-    };
-
-    // Calculate meal insight
-    const foodActions = userActions.filter(a => a.type === 'food' || a.type === 'meal');
-    const foodCounts: Record<string, number> = {};
-    
-    foodActions.forEach(action => {
-      foodCounts[action.value] = (foodCounts[action.value] || 0) + 1;
-    });
-
-    const mostFrequentFood = Object.entries(foodCounts).sort((a, b) => b[1] - a[1])[0];
-    const [foodType, foodCount] = mostFrequentFood || ['None', 0];
-
-    const mealInsight: MealInsight = {
-      status: foodType === 'Meat' ? 'detected' : 'improving',
-      description:
-        foodCount === 0
-          ? 'No meal data yet. Start tracking your meals to get personalized insights!'
-          : foodType === 'Meat'
-          ? FOOD_ALTERNATIVES['Meat']
-          : foodType === 'Vegetarian'
-          ? FOOD_ALTERNATIVES['Vegetarian']
-          : `Excellent! You're choosing ${foodType} most often. Keep it up!`,
-      mostFrequentFood: foodType,
-      count: foodCount,
-    };
-
-    // Calculate commute insight
-    const commuteActions = userActions.filter(a => a.type === 'commute' || a.type === 'transport');
-    const driveCount = commuteActions.filter(a => a.value === 'Drive').length;
-
-    const commuteInsight: CommuteInsight = {
-      status: driveCount > 2 ? 'detected' : 'improving',
-      description:
-        driveCount > 2
-          ? `You've driven ${driveCount} times recently. Consider carpooling, biking, or using public transport to reduce your carbon footprint!`
-          : driveCount > 0
-          ? `You're doing well! Only ${driveCount} drive(s) recorded. Keep exploring greener alternatives.`
-          : `Amazing! No driving detected. You're making eco-friendly commute choices!`,
-      driveCount,
-    };
+    // --- Commute insight from selections (key = "travel") ---
+    const travel = selections?.['travel'];
+    let commuteDesc: string;
+    let commuteStatus: 'detected' | 'improving';
+    if (!travel) {
+      commuteDesc = 'No commute data yet. Log your transport choices to track your footprint!';
+      commuteStatus = 'detected';
+    } else if (travel.tier === 'best') {
+      commuteDesc = "Amazing! Walking is the greenest commute choice. You're making eco-friendly decisions!";
+      commuteStatus = 'improving';
+    } else if (travel.tier === 'better') {
+      commuteDesc = "Great job using public transit! It's much greener than driving solo.";
+      commuteStatus = 'improving';
+    } else {
+      commuteDesc = "Driving detected. Consider carpooling, cycling, or public transport to cut your carbon footprint!";
+      commuteStatus = 'detected';
+    }
 
     return {
-      usageInsight,
-      mealInsight,
-      commuteInsight,
+      usageInsight: { status: usageStatus, description: usageDesc },
+      mealInsight: { status: mealStatus, description: mealDesc },
+      commuteInsight: { status: commuteStatus, description: commuteDesc },
     };
-  }, [userActions]);
+  }, [stats, selections]);
 };

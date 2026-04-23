@@ -1,16 +1,13 @@
-import { useState } from "react";
 import { Sparkles, Zap, Camera, Globe, Brain } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslations, Text, fimo } from "@fimo/ui";
 import { Button } from "@/components/ui/button";
-import ComingSoonDialog from "./ComingSoonDialog";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
 const item = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 
 export default function HeroSection() {
   const { t } = useTranslations();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const scrollToFeatures = () => {
     document.querySelector("#features")?.scrollIntoView({ behavior: "smooth" });
@@ -76,11 +73,12 @@ export default function HeroSection() {
             />
           </motion.p>
 
-          <motion.div variants={item} className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <motion.div variants={item} className="mt-10 flex justify-center">
             <Button
               size="lg"
+              variant="outline"
               onClick={scrollToFeatures}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 shadow-[0_0_30px_-5px_rgba(16,185,129,0.4)]"
+              className="border-border text-foreground hover:bg-secondary text-base px-8 backdrop-blur-sm"
             >
               <Text value={t("hero.explore", "Explore Features")} />
             </Button>
@@ -107,8 +105,6 @@ export default function HeroSection() {
           ))}
         </motion.div>
       </section>
-
-      <ComingSoonDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
   );
 }

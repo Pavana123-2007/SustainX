@@ -76,6 +76,53 @@ const resultSchema: Schema = {
   required: ["title", "description", "ecoScore", "suggestions"],
 };
 
+export interface DayTip {
+  emoji: string;
+  text: string;
+}
+
+export async function generateDayTips(
+  selections: Record<string, { points: number; tier: "best" | "better" | "least" }>
+): Promise<DayTip[]> {
+  if (!apiKey) {
+    throw new Error("Missing VITE_GEMINI_API_KEY. Please add it to your .env.local file.");
+  }
+
+  const tipsSchema: Schema = {
+    type: SchemaType.ARRAY,
+    items: {
+      type: SchemaType.OBJECT,
+      properties: {
+        emoji: { type: SchemaType.STRING, description: "A single relevant emoji" },
+        text:  { type: SchemaType.STRING, description: "A short actionable sustainability tip with estimated CO₂ saving" },
+      },
+      required: ["emoji", "text"],
+    },
+  };
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json", responseSchema: tipsSchema },
+  });
+
+  const summary = Object.entries(selections)
+    .map(([cat, { tier }]) => `${cat}: ${tier}`)
+    .join(", ");
+
+  const prompt = `A user made these eco choices today: ${summary}.
+Based on their choices, generate exactly 3 personalized sustainability tips to improve their day.
+Each tip should be specific to their choices, actionable, and include an estimated CO₂ saving.
+Return a JSON array of 3 objects with "emoji" and "text" fields.`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  try {
+    return JSON.parse(text) as DayTip[];
+  } catch {
+    throw new Error("Invalid response from Gemini");
+  }
+}
+
 export async function analyzeImageWithGemini(base64Image: string): Promise<ScanResult> {
   if (!apiKey) {
     throw new Error("Missing VITE_GEMINI_API_KEY. Please add it to your .env.local file.");

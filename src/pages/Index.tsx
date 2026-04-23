@@ -44,10 +44,10 @@ const Index = () => {
         <ImpactCounterStrip />
         <FutureSimulatorSection stats={stats} />
         <SectionDivider />
-        <ImproveMyDaySection stats={{ totalPoints: totalScore, goodActionsCount: goodActions, badActionsCount: badActions }} />
+        <ImproveMyDaySection selections={selections ?? {}} />
         <TestimonialsSection />
         <SectionDivider />
-        <SmartSuggestionsSection />
+        <SmartSuggestionsSection stats={stats} selections={selections} />
         <Footer />
       </div>
     </div>

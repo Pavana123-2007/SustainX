@@ -6,25 +6,27 @@ import { Button } from "@/components/ui/button";
 import ComingSoonDialog from "./ComingSoonDialog";
 import QuickActionsModal from "./QuickActionsModal";
 import { useSustainXInsights } from "@/hooks/useSustainXInsights";
-import { useUserActions } from "@/context/UserActionsContext";
 
-export default function SmartSuggestionsSection() {
+interface UserStats {
+  totalPoints: number;
+  goodActionsCount: number;
+  badActionsCount: number;
+  allTimePoints: number;
+}
+
+type Selections = Record<string, { points: number; tier: 'best' | 'better' | 'least' }>;
+
+interface Props {
+  stats?: UserStats;
+  selections?: Selections;
+}
+
+export default function SmartSuggestionsSection({ stats, selections }: Props) {
   const { t } = useTranslations();
-  const { userActions } = useUserActions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [quickActionsModalOpen, setQuickActionsModalOpen] = useState(false);
 
-  const { usageInsight, mealInsight, commuteInsight } = useSustainXInsights(userActions);
-
-  // Check if there are any actions logged today
-  const hasActionsToday = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayTimestamp = today.getTime();
-    
-    return userActions.some(action => action.timestamp >= todayTimestamp);
-  };
-
+  const { usageInsight, mealInsight, commuteInsight } = useSustainXInsights(null, stats, selections);
 
 
   const insights = [
