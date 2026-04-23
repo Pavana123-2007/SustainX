@@ -5,9 +5,8 @@ import { useState, useEffect } from "react";
 import { getTestimonials, submitTestimonial } from "@/api/sustainability";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
+import { Input } from "@/components/UI/input";
+import { Label } from "@/components/UI/label";
 
 interface Testimonial {
   id: number;
@@ -20,7 +19,6 @@ interface Testimonial {
 
 export default function TestimonialsSection() {
   const { t } = useTranslations();
-  const { user } = useAuth();
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -198,7 +196,7 @@ export default function TestimonialsSection() {
                 <Input
                   id="userName"
                   value={formData.userName}
-                  onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, userName: e.target.value })}
                   placeholder="John Doe"
                   required
                 />
@@ -209,7 +207,7 @@ export default function TestimonialsSection() {
                 <Input
                   id="userTitle"
                   value={formData.userTitle}
-                  onChange={(e) => setFormData({ ...formData, userTitle: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, userTitle: e.target.value })}
                   placeholder="Environmental Scientist"
                 />
               </div>
@@ -241,7 +239,7 @@ export default function TestimonialsSection() {
                 <textarea
                   id="comment"
                   value={formData.comment}
-                  onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, comment: e.target.value })}
                   placeholder="Share your experience with SustainX..."
                   required
                   rows={4}

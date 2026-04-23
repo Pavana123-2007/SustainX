@@ -73,7 +73,7 @@ export default function ImpactCounterStrip() {
   }, []);
 
   const counters = [
-    { icon: Users, value: stats.activeUsers, label: t("counter.users", "Active Users") },
+    { icon: Users, value: stats.activeUsers, label: t("counter.users", "Total Users") },
     { icon: TreePine, value: stats.treesEquivalent, label: t("counter.trees", "Trees Equivalent Saved") },
     { icon: Zap, value: stats.ecoActionsLogged, label: t("counter.actions", "Eco Actions Logged") },
     { 
