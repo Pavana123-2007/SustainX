@@ -45,7 +45,7 @@ export async function logSustainabilityAction({
 
     const idToken = await user.getIdToken();
 
-    const response = await fetch("http://localhost:5000/api/logSustainabilityAction", {
+    const response = await fetch("/api/logSustainabilityAction", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -86,7 +86,7 @@ export async function getUserStats(): Promise<UserStatsResponse> {
     const idToken = await user.getIdToken();
     console.log('[getUserStats] Got ID token, calling API...');
 
-    const response = await fetch("http://localhost:5000/api/getUserStats", {
+    const response = await fetch("/api/getUserStats", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -128,7 +128,7 @@ interface GlobalStatsResponse {
 export async function getGlobalStats(): Promise<GlobalStatsResponse> {
   try {
     console.log('[getGlobalStats API] Calling endpoint...');
-    const response = await fetch("http://localhost:5000/api/getGlobalStats", {
+    const response = await fetch("/api/getGlobalStats", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -179,7 +179,7 @@ export async function submitTestimonial({
     const user = auth.currentUser;
     const idToken = user ? await user.getIdToken() : null;
 
-    const response = await fetch("http://localhost:5000/api/submitTestimonial", {
+    const response = await fetch("/api/submitTestimonial", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -227,7 +227,7 @@ interface GetTestimonialsResponse {
 
 export async function getTestimonials(limit = 10, offset = 0): Promise<GetTestimonialsResponse> {
   try {
-    const response = await fetch(`http://localhost:5000/api/getTestimonials?limit=${limit}&offset=${offset}`, {
+    const response = await fetch(`/api/getTestimonials?limit=${limit}&offset=${offset}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

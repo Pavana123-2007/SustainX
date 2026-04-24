@@ -1,5 +1,5 @@
 export async function getAIInsights(data: any) {
-  const response = await fetch("http://localhost:5000/ai", {
+  const response = await fetch("/api/ai", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
