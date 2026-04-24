@@ -56,6 +56,13 @@ export function useUserStats(): UseUserStatsReturn {
 
   useEffect(() => {
     fetchStats();
+
+    // 🔥 ADDED: auto-refresh every 3 seconds
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return {

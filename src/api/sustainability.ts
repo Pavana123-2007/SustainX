@@ -64,6 +64,9 @@ export async function logSustainabilityAction({
       throw new Error(data.error || "Failed to log action");
     }
 
+    // 🔥 ADDED LINE (force refresh of stats after logging)
+    await getUserStats();
+
     return data;
   } catch (error) {
     console.error("Error logging sustainability action:", error);
@@ -78,7 +81,7 @@ export async function getUserStats(): Promise<UserStatsResponse> {
   try {
     const user = auth.currentUser;
     console.log('[getUserStats] Current user:', user?.uid);
-    
+
     if (!user) {
       throw new Error("User not authenticated");
     }
