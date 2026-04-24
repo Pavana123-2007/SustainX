@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Brain, TrendingUp, Leaf, BarChart3 } from "lucide-react";
 import { motion, useAnimate } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/UI/button";
 import ComingSoonDialog from "./ComingSoonDialog";
 import QuickActionsModal from "./QuickActionsModal";
 import { useSustainXInsights } from "@/hooks/useSustainXInsights";

@@ -1,7 +1,7 @@
 import { Sparkles, Zap, Camera, Globe, Brain } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslations, Text, fimo } from "@fimo/ui";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/UI/button";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
 const item = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };

@@ -3,8 +3,8 @@ import { Star, Quote, Plus, Send } from "lucide-react";
 import { useTranslations, Text } from "@fimo/ui";
 import { useState, useEffect } from "react";
 import { getTestimonials, submitTestimonial } from "@/api/sustainability";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/UI/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/UI/dialog";
 import { Input } from "@/components/UI/input";
 import { Label } from "@/components/UI/label";
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Camera, Scan } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/UI/badge";
 import ObjectScannerDialog from "./ObjectScannerDialog";
 import XPBar from "./XPBar";
 

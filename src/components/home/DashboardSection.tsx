@@ -1,7 +1,7 @@
 import { TrendingDown, TrendingUp, Info } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/UI/badge";
 
 interface Props {
   score: number;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Zap, Lightbulb, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/UI/button";
 import { generateDayTips, type DayTip } from "@/lib/gemini";
 import { playSuccessChime } from "@/utils/sounds";
 

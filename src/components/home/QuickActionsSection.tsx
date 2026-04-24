@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Bus, Car, Footprints, Leaf, Salad, Drumstick, Zap, Lightbulb, Factory, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/UI/badge";
 import { logSustainabilityAction } from "@/api/sustainability";
 import { useUserActions } from "@/context/UserActionsContext";
 import { playPop, playXPGain } from "@/utils/sounds";

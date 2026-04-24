@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/UI/dialog";
 import { Camera, X, Leaf, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { analyzeImageWithGemini, ScanResult } from "@/lib/gemini";

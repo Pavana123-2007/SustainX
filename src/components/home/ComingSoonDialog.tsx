@@ -1,14 +1,14 @@
 import { Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslations, Text } from "@fimo/ui";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/UI/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "@/components/UI/dialog";
 
 interface ComingSoonDialogProps {
   open: boolean;

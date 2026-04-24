@@ -8,8 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@/components/UI/dialog";
+import { Button } from "@/components/UI/button";
 import { useUserActions } from "@/context/UserActionsContext";
 import { logSustainabilityAction } from "@/api/sustainability";
 
