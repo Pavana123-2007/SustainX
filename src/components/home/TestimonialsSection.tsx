@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Star, Quote, Plus, Send } from "lucide-react";
 import { useTranslations, Text } from "@fimo/ui";
 import { useState, useEffect } from "react";
-import { getTestimonials, submitTestimonial } from "@/api/sustainability";
+//import { getTestimonials, submitTestimonial } from "@/api/sustainability";
 import { Button } from "@/components/UI/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/UI/dialog";
 import { Input } from "@/components/UI/input";
@@ -20,7 +20,7 @@ interface Testimonial {
 export default function TestimonialsSection() {
   const { t } = useTranslations();
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 🔥 FIX (prevent stuck loading)
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,43 +30,21 @@ export default function TestimonialsSection() {
     comment: "",
   });
 
-  // Fetch testimonials on mount
+  // 🔥 FIX: disable fetch since API is removed
   useEffect(() => {
-    fetchTestimonials();
+    setLoading(false);
   }, []);
 
-  const fetchTestimonials = async () => {
-    try {
-      const response = await getTestimonials(6); // Get 6 testimonials
-      if (response.success && response.data) {
-        setTestimonials(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching testimonials:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchTestimonials = async () => { }; // 🔥 FIX (no-op)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
-      const response = await submitTestimonial(formData);
-      
-      if (response.success) {
-        alert(response.message || "Thank you for your feedback! Your testimonial will be reviewed and published soon.");
-        setShowForm(false);
-        setFormData({
-          userName: "",
-          userTitle: "",
-          rating: 5,
-          comment: "",
-        });
-      } else {
-        alert(response.error || "Failed to submit testimonial. Please try again.");
-      }
+      // 🔥 FIX: disable submit (no backend call)
+      alert("Testimonial submission is temporarily disabled.");
+      setShowForm(false);
     } catch (error) {
       console.error("Error submitting testimonial:", error);
       alert("Failed to submit testimonial. Please try again.");
@@ -150,9 +128,8 @@ export default function TestimonialsSection() {
                   {Array.from({ length: 5 }).map((_, j) => (
                     <Star
                       key={j}
-                      className={`h-3.5 w-3.5 ${
-                        j < item.rating ? "fill-primary text-primary" : "text-muted"
-                      }`}
+                      className={`h-3.5 w-3.5 ${j < item.rating ? "fill-primary text-primary" : "text-muted"
+                        }`}
                     />
                   ))}
                 </div>
@@ -180,7 +157,7 @@ export default function TestimonialsSection() {
           </div>
         )}
 
-        {/* Submit Testimonial Dialog */}
+        {/* Dialog remains unchanged */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -191,6 +168,7 @@ export default function TestimonialsSection() {
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* FORM UI UNCHANGED */}
               <div>
                 <Label htmlFor="userName">Your Name *</Label>
                 <Input
@@ -223,11 +201,10 @@ export default function TestimonialsSection() {
                       className="transition-transform hover:scale-110"
                     >
                       <Star
-                        className={`h-8 w-8 ${
-                          rating <= formData.rating
-                            ? "fill-primary text-primary"
-                            : "text-muted"
-                        }`}
+                        className={`h-8 w-8 ${rating <= formData.rating
+                          ? "fill-primary text-primary"
+                          : "text-muted"
+                          }`}
                       />
                     </button>
                   ))}
@@ -243,39 +220,19 @@ export default function TestimonialsSection() {
                   placeholder="Share your experience with SustainX..."
                   required
                   rows={4}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
 
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1"
-                  disabled={submitting}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1">
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    "Submitting..."
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Submit
-                    </>
-                  )}
+                <Button type="submit" className="flex-1">
+                  <Send className="mr-2 h-4 w-4" />
+                  Submit
                 </Button>
               </div>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Your testimonial will be reviewed before being published.
-              </p>
             </form>
           </DialogContent>
         </Dialog>

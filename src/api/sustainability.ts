@@ -64,9 +64,6 @@ export async function logSustainabilityAction({
       throw new Error(data.error || "Failed to log action");
     }
 
-    // 🔥 ADDED LINE (force refresh of stats after logging)
-    await getUserStats();
-
     return data;
   } catch (error) {
     console.error("Error logging sustainability action:", error);
@@ -93,10 +90,12 @@ export async function getUserStats(): Promise<UserStatsResponse> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache", // 🔥 FIX
       },
       body: JSON.stringify({
         idToken,
       }),
+      cache: "no-store", // 🔥 CRITICAL FIX
     });
 
     const data = await response.json();
@@ -135,7 +134,9 @@ export async function getGlobalStats(): Promise<GlobalStatsResponse> {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache", // 🔥 FIX
       },
+      cache: "no-store", // 🔥 CRITICAL FIX
     });
 
     const data = await response.json();
@@ -148,104 +149,6 @@ export async function getGlobalStats(): Promise<GlobalStatsResponse> {
     return data;
   } catch (error) {
     console.error("Error fetching global stats:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-interface SubmitTestimonialParams {
-  userName: string;
-  userTitle?: string;
-  rating: number;
-  comment: string;
-}
-
-interface SubmitTestimonialResponse {
-  success: boolean;
-  data?: {
-    id: number;
-    createdAt: string;
-  };
-  error?: string;
-  message?: string;
-}
-
-export async function submitTestimonial({
-  userName,
-  userTitle,
-  rating,
-  comment,
-}: SubmitTestimonialParams): Promise<SubmitTestimonialResponse> {
-  try {
-    const user = auth.currentUser;
-    const idToken = user ? await user.getIdToken() : null;
-
-    const response = await fetch("/api/submitTestimonial", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userName,
-        userTitle,
-        rating,
-        comment,
-        idToken,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to submit testimonial");
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Error submitting testimonial:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-interface Testimonial {
-  id: number;
-  user_name: string;
-  user_title: string | null;
-  rating: number;
-  comment: string;
-  created_at: string;
-}
-
-interface GetTestimonialsResponse {
-  success: boolean;
-  data?: Testimonial[];
-  count?: number;
-  error?: string;
-}
-
-export async function getTestimonials(limit = 10, offset = 0): Promise<GetTestimonialsResponse> {
-  try {
-    const response = await fetch(`/api/getTestimonials?limit=${limit}&offset=${offset}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to fetch testimonials");
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching testimonials:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
